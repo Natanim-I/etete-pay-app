@@ -5,23 +5,21 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
-
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="users")
 @Component
-public class User {
+@Table(name="wallets")
+public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID userId;
-    @Column(unique = true)
-    private String email;
-    private String passwordHash;
-    private String firstName;
-    private String lastName;
-    private String country;
+    private UUID walletId;
+    private String currency;
+    private BigDecimal balance;
+    @ManyToOne
+    private User user;
 }

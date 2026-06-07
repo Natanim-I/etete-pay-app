@@ -21,9 +21,6 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Autowired
-    private UserDetails userDetails;
-
     public String generateToken(String email) {
         Map<String, Object> claim = new HashMap<>();
         return Jwts.builder()
@@ -53,7 +50,7 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token, UserDetails userDetails) {
         String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token)) ;
     }

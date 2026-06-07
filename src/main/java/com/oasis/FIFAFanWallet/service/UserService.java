@@ -1,5 +1,6 @@
 package com.oasis.FIFAFanWallet.service;
 
+import com.oasis.FIFAFanWallet.exception.UserAlreadyExistsException;
 import com.oasis.FIFAFanWallet.model.User;
 import com.oasis.FIFAFanWallet.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,11 @@ public class UserService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     //User registration with password being hashed
-    public User registerUser(User user) {
+    public User registerUser(User user){
+        //Checking if the email exists
+        if(userRepository.existsByEmail(user.getEmail())){
+            throw new UserAlreadyExistsException("User already exists with the specified Email");
+        }
         //Setting hashed password
         user.setPasswordHash(encoder.encode(user.getPasswordHash()));
         //Saving user to database
