@@ -1,4 +1,4 @@
-package com.oasis.FIFAFanWallet.model;
+package com.oasis.FIFAFanWallet.model.DTO;
 
 import java.util.UUID;
 

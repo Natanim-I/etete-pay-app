@@ -24,4 +24,9 @@ public class GeneralExceptionHandler {
     public ResponseEntity<ErrorResponse> userExistsExceptionHandler(UserAlreadyExistsException ex){
         return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(409, ex.getMessage()));
     }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> invalidRefreshTokenHandler(InvalidRefreshTokenException ex){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(401, ex.getMessage()));
+    }
 }

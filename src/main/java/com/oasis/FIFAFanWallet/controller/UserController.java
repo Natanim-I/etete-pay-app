@@ -1,6 +1,6 @@
 package com.oasis.FIFAFanWallet.controller;
 import com.oasis.FIFAFanWallet.model.User;
-import com.oasis.FIFAFanWallet.model.UserResponse;
+import com.oasis.FIFAFanWallet.model.DTO.UserResponse;
 import com.oasis.FIFAFanWallet.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

@@ -19,7 +19,7 @@ public class WalletController {
 
     @GetMapping("{userId}/getWallets")
     public ResponseEntity<?> getUserWallets(@RequestParam UUID userId){
-
+        return null;
     }
 
 }
