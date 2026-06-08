@@ -1,0 +1,29 @@
+package com.oasis.FIFAFanWallet.controller;
+
+import com.oasis.FIFAFanWallet.dto.TransactionRequest;
+import com.oasis.FIFAFanWallet.dto.TransactionResponse;
+import com.oasis.FIFAFanWallet.service.TransactionService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/wallet/{walletId}")
+public class TransactionController {
+
+    @Autowired
+    private TransactionService transactionService;
+
+    @PostMapping("/deposit")
+    public ResponseEntity<TransactionResponse> deposit(@PathVariable UUID walletId, @RequestBody TransactionRequest transactionRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.deposit(walletId, transactionRequest));
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<TransactionResponse> withdraw(@PathVariable UUID walletId, @RequestBody TransactionRequest transactionRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.withdraw(walletId, transactionRequest));
+    }
+}

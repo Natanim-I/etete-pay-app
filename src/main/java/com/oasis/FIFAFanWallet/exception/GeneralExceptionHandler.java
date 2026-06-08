@@ -45,4 +45,14 @@ public class GeneralExceptionHandler {
     public ResponseEntity<ErrorResponse> walletNotFoundHandler(WalletNotFoundException ex){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(404, ex.getMessage()));
     }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> accessDeniedHandler(AccessDeniedException ex){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(403, ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> illegalStateHandler(IllegalStateException ex){
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(403, ex.getMessage()));
+    }
 }

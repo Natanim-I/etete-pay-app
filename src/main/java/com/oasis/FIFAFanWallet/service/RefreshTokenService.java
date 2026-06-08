@@ -30,11 +30,11 @@ public class RefreshTokenService {
 
     public RefreshToken verifyToken(String token){
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token).orElseThrow(
-                () -> new InvalidRefreshTokenException("Invalid or Expired Refresh Token."));
+                () -> new InvalidRefreshTokenException("Invalid or expired refresh token."));
 
         if(refreshToken.getExpirationDate().isBefore(Instant.now())){
             refreshTokenRepository.delete(refreshToken);
-            throw new InvalidRefreshTokenException("Invalid or Expired Refresh Token.");
+            throw new InvalidRefreshTokenException("Invalid or expired refresh token.");
         }
         return refreshToken;
     }
