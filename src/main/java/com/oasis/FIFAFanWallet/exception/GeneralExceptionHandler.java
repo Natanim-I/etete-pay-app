@@ -51,8 +51,23 @@ public class GeneralExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(403, ex.getMessage()));
     }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> illegalStateHandler(IllegalStateException ex){
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(403, ex.getMessage()));
+    @ExceptionHandler(WalletIsDisabledException.class)
+    public ResponseEntity<ErrorResponse> walletIsDisabledHandler(WalletIsDisabledException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ErrorResponse> insufficientFundsHandler(InsufficientFundsException ex){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(CurrencyMismatchException.class)
+    public ResponseEntity<ErrorResponse> currencyMismatchHandler(CurrencyMismatchException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> illegalArgumentHandler(IllegalArgumentException ex){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(400, ex.getMessage()));
     }
 }
