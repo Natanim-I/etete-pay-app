@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,19 +20,24 @@ public class WalletController {
 
     private final WalletService walletService;
 
-    @GetMapping("/users/{userId}/wallets")
-    public ResponseEntity<List<WalletResponse>> getUserWallets(@PathVariable UUID userId) {
-        return ResponseEntity.ok(walletService.getUserWallets(userId));
+    @GetMapping("user/total-worth")
+    public ResponseEntity<BigDecimal> calculateTotalBalance(){
+        return ResponseEntity.ok(walletService.calculateTotalBalance());
     }
 
-    @PostMapping("/users/{userId}/wallet")
-    public ResponseEntity<WalletResponse> createWallet(@PathVariable UUID userId, @RequestBody WalletRequest walletRequest) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(walletService.createUserWallet(userId, walletRequest));
+    @GetMapping("/user/wallets")
+    public ResponseEntity<List<WalletResponse>> getUserWallets() {
+        return ResponseEntity.ok(walletService.getUserWallets());
     }
 
-    @DeleteMapping("/users/{userId}/wallets/{walletId}")
-    public ResponseEntity<Void> disableUserWallet(@PathVariable UUID userId, @PathVariable UUID walletId){
-        walletService.disableUserWallet(userId, walletId);
+    @PostMapping("/user/wallet/create")
+    public ResponseEntity<WalletResponse> createWallet(@RequestBody WalletRequest walletRequest) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(walletService.createUserWallet(walletRequest));
+    }
+
+    @DeleteMapping("/users/wallets/{walletId}")
+    public ResponseEntity<Void> disableUserWallet(@PathVariable UUID walletId){
+        walletService.disableUserWallet(walletId);
         return ResponseEntity.noContent().build();
     }
 }

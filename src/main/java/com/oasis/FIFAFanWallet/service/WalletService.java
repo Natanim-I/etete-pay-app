@@ -2,6 +2,7 @@ package com.oasis.FIFAFanWallet.service;
 
 import com.oasis.FIFAFanWallet.dto.WalletRequest;
 import com.oasis.FIFAFanWallet.dto.WalletResponse;
+import com.oasis.FIFAFanWallet.enums.Currency;
 import com.oasis.FIFAFanWallet.enums.WalletStatus;
 import com.oasis.FIFAFanWallet.exception.AccessDeniedException;
 import com.oasis.FIFAFanWallet.exception.UserNotFoundException;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,13 +26,31 @@ public class WalletService {
 
     private final UserRepository userRepo;
     private final WalletRepository walletRepository;
+    private final ExchangeRateService exchangeRateService;
 
-    public List<WalletResponse> getUserWallets(UUID userId) {
+    public BigDecimal calculateTotalBalance() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found!"));
-        if(!user.getEmail().equals(email)){
-            throw new AccessDeniedException("User doesn't have access.");
+        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found."));
+
+        List<Wallet> wallets = walletRepository.findAllByUser(user);
+
+        BigDecimal totalBalance = BigDecimal.ZERO;
+
+        for(Wallet wallet : wallets) {
+            if (wallet.getCurrency() == Currency.USD)
+                totalBalance = totalBalance.add(wallet.getBalance());
+            else {
+                BigDecimal rate = exchangeRateService.getCurrencyExchangeRate(wallet.getCurrency(), Currency.USD);
+                totalBalance = totalBalance.add(wallet.getBalance().multiply(rate));
+            }
         }
+        return totalBalance.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public List<WalletResponse> getUserWallets() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
+
         List<Wallet> wallets = walletRepository.findAllByUser(user);
 
         return wallets.stream()
@@ -38,13 +58,9 @@ public class WalletService {
                 .toList();
     }
 
-    public WalletResponse createUserWallet(UUID userId, WalletRequest walletRequest) {
+    public WalletResponse createUserWallet(WalletRequest walletRequest) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found!"));
-
-        if(!user.getEmail().equals(email)){
-            throw new AccessDeniedException("User doesn't have access.");
-        }
+        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
 
         boolean walletExists = walletRepository.existsByUserAndCurrency(user, walletRequest.currency());
         if(walletExists){
@@ -55,8 +71,10 @@ public class WalletService {
         return new WalletResponse(savedWallet.getWalletId(), savedWallet.getBalance(), savedWallet.getCurrency());
     }
 
-    public void disableUserWallet(UUID userId, UUID walletId) {
-        Wallet wallet = walletRepository.findByWalletIdAndUser_UserId(walletId, userId).orElseThrow(() -> new WalletNotFoundException("Wallet not found."));
+    public void disableUserWallet(UUID walletId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found."));
+        Wallet wallet = walletRepository.findByWalletIdAndUser(walletId, user).orElseThrow(() -> new WalletNotFoundException("Wallet not found."));
         wallet.setStatus(WalletStatus.DISABLED);
         walletRepository.save(wallet);
     }
