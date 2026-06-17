@@ -1,15 +1,16 @@
 # FIFA Fan Wallet
 
-A Spring Boot REST API for managing multi-currency digital wallets, built for FIFA fans planning trips and tracking match-day spending. Users can register, hold wallets in multiple currencies, transfer funds, exchange between wallets using live rates, set trip budgets, and view transaction history — all secured with JWT authentication.
+A Spring Boot REST API for managing multi-currency digital wallets, built for FIFA fans planning trips and tracking match-day spending. Users can register, hold wallets in multiple currencies, transfer funds, exchange between wallets using live rates, set category-based trip budgets, make merchant payments, and view filtered transaction history — all secured with JWT authentication.
 
 ## Features
 
 - **User accounts** — Registration, profile details, and JWT-based auth with refresh tokens
 - **Multi-currency wallets** — Create wallets in supported currencies (USD, EUR, GBP, JPY, and more)
 - **Transactions** — Deposit, withdraw, peer-to-peer transfer, and cross-currency exchange
+- **Transaction search** — Filter history by type, currency, date range, and amount
 - **Live exchange rates** — Fetched from the [Frankfurter API](https://api.frankfurter.dev)
-- **Budget tracking** — Create and manage budgets by period (trip, weekly, biweekly, monthly)
-- **Payments** — Payment endpoint scaffolded (implementation in progress)
+- **Category-based budgets** — Create budgets by spending category and period, with overlap protection and period validation
+- **Merchant payments** — Pay from a wallet, record the transaction, and automatically update the matching active budget (with cross-currency conversion when needed)
 
 ## Tech Stack
 
@@ -128,9 +129,29 @@ Authorization: Bearer <access_token>
 |--------|----------|-------------|
 | `POST` | `/api/wallet/{walletId}/deposit` | Deposit funds into a wallet |
 | `POST` | `/api/wallet/{walletId}/withdraw` | Withdraw funds from a wallet |
-| `POST` | `/api/wallet/transfer/{senderId}/{receiverId}` | Transfer between two wallets |
-| `POST` | `/api/wallet/exchange/{fromWalletId}/{toWalletId}` | Exchange currency between wallets |
-| `GET` | `/api/user/transactions` | List transaction history |
+| `POST` | `/api/wallet/transfer/{senderId}/{receiverId}` | Transfer between two wallets (same currency) |
+| `POST` | `/api/wallet/exchange/{fromWalletId}/{toWalletId}` | Exchange currency between the user's own wallets |
+| `GET` | `/api/user/transactions` | List transaction history with optional filters |
+
+#### Transaction query parameters
+
+All parameters on `GET /api/user/transactions` are optional:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `type` | `TransactionType` | Filter by transaction type |
+| `currency` | `Currency` | Filter by wallet currency |
+| `startDate` | `LocalDateTime` | Include transactions on or after this date |
+| `endDate` | `LocalDateTime` | Include transactions on or before this date |
+| `minAmount` | `BigDecimal` | Minimum transaction amount |
+| `maxAmount` | `BigDecimal` | Maximum transaction amount |
+| `amount` | `BigDecimal` | Exact transaction amount |
+
+Example:
+
+```
+GET /api/user/transactions?type=PAYMENT&currency=USD&minAmount=10&maxAmount=500
+```
 
 ### Budgets
 
@@ -143,19 +164,93 @@ Authorization: Bearer <access_token>
 | `PUT` | `/api/user/budget/{budgetId}/update` | Update an existing budget |
 | `DELETE` | `/api/user/budget/{budgetId}/delete` | Delete a budget |
 
+#### Budget rules
+
+- Each budget has a **currency**, **category**, **period type**, **limit**, and **date range**.
+- Overlapping budgets with the same category and period type are not allowed.
+- Period date ranges are validated by type:
+  - `WEEKLY` — exactly 7 days
+  - `BIWEEKLY` — exactly 14 days
+  - `MONTHLY` — exactly 1 month
+  - `TRIP` — flexible date range (start must be before end)
+
+Example create request:
+
+```json
+{
+  "currency": "USD",
+  "limitAmount": 500.00,
+  "type": "TRIP",
+  "category": "FOOD",
+  "startDate": "2026-06-01T00:00:00",
+  "endDate": "2026-06-30T23:59:59"
+}
+```
+
 ### Payments
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/api/user/make-payment` | Make a payment *(in progress)* |
+| `POST` | `/api/user/make-payment` | Make a merchant payment from a wallet |
 
-## Supported Currencies
+When a payment is made, the API:
+
+1. Validates the wallet belongs to the authenticated user and has sufficient funds
+2. Deducts the amount from the wallet
+3. Records a `PAYMENT` transaction tagged with the budget category
+4. Finds the user's active budget matching the category and current date
+5. Updates the budget's spent amount (converting via live exchange rates if the wallet and budget currencies differ)
+
+Example request:
+
+```json
+{
+  "walletId": "550e8400-e29b-41d4-a716-446655440000",
+  "amount": 45.50,
+  "budgetCategory": "FOOD",
+  "merchantName": "Stadium Cafe",
+  "description": "Pre-match lunch"
+}
+```
+
+Example response (`201 Created`):
+
+```json
+{
+  "paymentId": "660e8400-e29b-41d4-a716-446655440001",
+  "userId": "770e8400-e29b-41d4-a716-446655440002",
+  "walletId": "550e8400-e29b-41d4-a716-446655440000",
+  "transactionId": "880e8400-e29b-41d4-a716-446655440003",
+  "amount": 45.50,
+  "budgetCategory": "FOOD",
+  "merchantName": "Stadium Cafe",
+  "description": "Pre-match lunch",
+  "status": "COMPLETED",
+  "createdAt": "2026-06-16T12:30:00"
+}
+```
+
+## Enums
+
+### Supported Currencies
 
 `USD`, `EUR`, `GBP`, `JPY`, `CHF`, `CAD`, `AUD`, `CNY`, `INR`, `BRL`, `MXN`, `RUB`, `ZAR`, `AED`, `SGD`, `ETH`
 
-## Budget Categories
+### Budget Categories
 
 `FOOD`, `HOTEL`, `TICKET`, `TRANSPORT`, `MERCHANDISE`, `OTHER`
+
+### Budget Periods
+
+`TRIP`, `WEEKLY`, `BIWEEKLY`, `MONTHLY`
+
+### Transaction Types
+
+`DEPOSIT`, `WITHDRAW`, `TRANSFER_IN`, `TRANSFER_OUT`, `EXCHANGE_IN`, `EXCHANGE_OUT`, `PAYMENT`
+
+### Payment Statuses
+
+`PENDING`, `COMPLETED`, `FAILED`, `REFUNDED`
 
 ## Project Structure
 
@@ -164,7 +259,7 @@ src/main/java/com/oasis/FIFAFanWallet/
 ├── config/          # Security, JWT filter, REST client setup
 ├── controller/      # REST API endpoints
 ├── dto/             # Request/response records
-├── enums/           # Currency, budget category, transaction types, etc.
+├── enums/           # Currency, budget category, transaction types, payment status, etc.
 ├── exception/       # Custom exceptions and global handler
 ├── model/           # JPA entities (User, Wallet, Transaction, Budget, Payment)
 ├── repo/            # Spring Data repositories
