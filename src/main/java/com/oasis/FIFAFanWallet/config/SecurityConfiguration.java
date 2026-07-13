@@ -31,7 +31,11 @@ public class SecurityConfiguration {
 
         http.csrf(customizer -> customizer.disable())
                 .authorizeHttpRequests(
-                        request -> request.requestMatchers("/api/user/register", "/api/auth/login", "/api/auth/refresh-token").permitAll().requestMatchers("/error").permitAll().anyRequest().authenticated())
+                        request -> request
+                                .requestMatchers("/api/user/register", "/api/user/forgot-password").permitAll()
+                                .requestMatchers("/api/auth/login", "/api/auth/refresh-token").permitAll()
+                                .requestMatchers("/error").permitAll()
+                                .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

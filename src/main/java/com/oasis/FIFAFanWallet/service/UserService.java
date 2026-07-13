@@ -1,21 +1,24 @@
 package com.oasis.FIFAFanWallet.service;
 
 import com.oasis.FIFAFanWallet.dto.RegisterRequest;
+import com.oasis.FIFAFanWallet.dto.ResetPassRequest;
 import com.oasis.FIFAFanWallet.dto.UserResponse;
 import com.oasis.FIFAFanWallet.dto.VerificationRequest;
-import com.oasis.FIFAFanWallet.exception.IllegalArgumentException;
 import com.oasis.FIFAFanWallet.exception.InvalidVerificationToken;
 import com.oasis.FIFAFanWallet.exception.UserAlreadyExistsException;
 import com.oasis.FIFAFanWallet.exception.UserNotFoundException;
+import com.oasis.FIFAFanWallet.model.auth.PasswordResetToken;
 import com.oasis.FIFAFanWallet.model.auth.User;
+import com.oasis.FIFAFanWallet.repo.PasswordResetTokenRepo;
 import com.oasis.FIFAFanWallet.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.UUID;
 
 @Service
@@ -25,7 +28,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-
+    private final PasswordResetTokenRepo passwordResetTokenRepo;
     //User registration with password being hashed
     public UserResponse registerUser(RegisterRequest user){
         //Checking if the email exists
@@ -83,5 +86,37 @@ public class UserService {
         emailService.sendVerificationEmail(user.getEmail(), user.getVerificationToken());
 
         return "Verification email is sent to the associated account email.";
+    }
+
+    public String forgotPassword(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found!"));
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+
+        String resetToken = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        PasswordResetToken passResetToken = new PasswordResetToken();
+        passResetToken.setUser(user);
+        passResetToken.setToken(resetToken);
+        passResetToken.setExpiryDate(LocalDateTime.now().plusHours(1));
+
+        passwordResetTokenRepo.save(passResetToken);
+
+        emailService.sendForgotPassEmail(user.getEmail(), resetToken);
+        return "Password reset email sent.";
+    }
+
+
+    public String resetPassword(String newPassword, String resetToken) {
+        PasswordResetToken passResetToken = passwordResetTokenRepo.findByToken(resetToken).orElseThrow(() -> new InvalidVerificationToken("Invalid reset token."));
+        if(passResetToken.getExpiryDate().isBefore(LocalDateTime.now())){
+            passwordResetTokenRepo.delete(passResetToken);
+            throw new InvalidVerificationToken("Expired reset token. Please request a new password reset email.");
+        }
+        User user = passResetToken.getUser();
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        passwordResetTokenRepo.delete(passResetToken);
+        return "Password reset successfully.";
     }
 }

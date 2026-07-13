@@ -56,6 +56,9 @@ docker compose up --build
 
 The API will be available at `http://localhost:8080`.
 
+> [!NOTE]
+> If you wish to enable email verification in Docker, you should supply SMTP environment variables (e.g. `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`) in your configuration/environment.
+
 ### Option 2: Local Development
 
 1. Copy the example configuration:
@@ -64,13 +67,25 @@ The API will be available at `http://localhost:8080`.
 cp src/main/resources/application.properties.example src/main/resources/application.properties
 ```
 
-2. Edit `application.properties` with your database credentials and JWT secret:
+2. Edit `application.properties` with your database credentials, JWT secret, and SMTP settings:
 
 ```properties
 spring.datasource.url=jdbc:postgresql://localhost:5432/fifa_fan_wallet
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 jwt.secret=your_base64_encoded_secret_key
+jwt.refresh-expiration=2592000000
+
+# Email (SMTP) Configuration
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your_email@gmail.com
+spring.mail.password=your_app_password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+# Frontend URL (for generating the verification link)
+frontend.url=http://localhost:5173
 ```
 
 3. Create the PostgreSQL database:
@@ -114,7 +129,25 @@ Authorization: Bearer <access_token>
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/user/register` | Register a new user |
+| `GET` | `/api/user/verify` | Verify user account via token query parameter |
+| `POST` | `/api/user/resend-verification` | Resend verification email |
 | `GET` | `/api/user/details` | Get authenticated user profile |
+
+#### Registration Requirements
+- **Password**: Must be at least 8 characters, containing at least one uppercase letter, one lowercase letter, one number, and one special character.
+- **Country**: Must be a valid 3-letter uppercase ISO country code.
+
+#### Verification Details
+- **Verify Account**: `GET /api/user/verify?verificationToken={token}`
+  Validates the token. Expiry is 1 hour from generation.
+- **Resend Verification**: `POST /api/user/resend-verification`
+  Request body structure:
+  ```json
+  {
+    "email": "user@example.com",
+    "verificationToken": "existing-expired-token"
+  }
+  ```
 
 ### Wallets
 
@@ -250,9 +283,17 @@ Example response (`201 Created`):
 
 `DEPOSIT`, `WITHDRAW`, `TRANSFER_IN`, `TRANSFER_OUT`, `EXCHANGE_IN`, `EXCHANGE_OUT`, `PAYMENT`
 
+### Transaction Statuses
+
+`PENDING`, `SUCCESS`, `FAILED`, `CANCELLED`, `REVERSED`
+
 ### Payment Statuses
 
 `PENDING`, `COMPLETED`, `FAILED`, `REFUNDED`
+
+### Wallet Statuses
+
+`ACTIVE`, `DISABLED`
 
 ## Logging & Observability
 

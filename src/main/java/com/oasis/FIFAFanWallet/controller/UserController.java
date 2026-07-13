@@ -1,8 +1,5 @@
 package com.oasis.FIFAFanWallet.controller;
-import com.oasis.FIFAFanWallet.dto.RegisterRequest;
-import com.oasis.FIFAFanWallet.dto.VerificationRequest;
-import com.oasis.FIFAFanWallet.model.auth.User;
-import com.oasis.FIFAFanWallet.dto.UserResponse;
+import com.oasis.FIFAFanWallet.dto.*;
 import com.oasis.FIFAFanWallet.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,5 +32,15 @@ public class UserController {
     @GetMapping("/details")
     public ResponseEntity<UserResponse> getUserDetails(){
         return ResponseEntity.ok(userService.getUserDetails());
+    }
+
+    @PostMapping("forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPassRequest forgotPassRequest){
+        return ResponseEntity.ok(userService.forgotPassword(forgotPassRequest.email()));
+    }
+
+    @PostMapping("reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPassRequest resetPassRequest){
+        return ResponseEntity.ok(userService.resetPassword(resetPassRequest.newPassword(), resetPassRequest.token()));
     }
 }

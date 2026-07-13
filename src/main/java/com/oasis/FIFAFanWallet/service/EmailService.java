@@ -9,6 +9,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -82,6 +84,71 @@ public class EmailService {
             );
         }catch (MessagingException ex){
             throw new EmailDeliveryException("Failed to send verification email.");
+        }
+        mailSender.send(message);
+    }
+
+    public void sendForgotPassEmail(String to, String resetToken){
+        String link = frontendUrl + "/user/reset-password?token=" + resetToken;
+        MimeMessage message = mailSender.createMimeMessage();
+        try
+        {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setSubject("Reset Your Password");
+            helper.setTo(to);
+            helper.setText("""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+        
+            <h2>Welcome to FIFA Fan Wallet ⚽</h2>
+
+            <p>
+                Please reset your password by clicking the button below:
+            </p>
+
+            <p>
+                <a href="%s"
+                   style="
+                        background-color: #0d6efd;
+                        color: white;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        display: inline-block;">
+                    Reset Password
+                </a>
+            </p>
+
+            <p>
+                If the button does not work, copy and paste the following link into your browser:
+            </p>
+
+            <p>%s</p>
+
+            <hr>
+
+            <p>
+                This reset link will expire in 1 hour.
+            </p>
+
+            <p>
+                If you did not request to reset your password, please ignore this email.
+            </p>
+
+            <br>
+
+            <p>
+                Regards,<br>
+                FIFA Fan Wallet Team
+            </p>
+
+        </body>
+        </html>
+        """.formatted(link, link), true
+            );
+        }catch (MessagingException ex){
+            throw new EmailDeliveryException("Failed to send password reset email.");
         }
         mailSender.send(message);
     }
