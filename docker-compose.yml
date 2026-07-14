@@ -9,8 +9,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      SPRING_MAIL_USERNAME: ${MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD}
     networks:
-      fifa-fan-wallet-network:
+      etete-pay-network:
     depends_on:
       - postgres
 
@@ -21,15 +23,15 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: fifa_fan_wallet
+      POSTGRES_DB: etete_pay
     networks:
-      fifa-fan-wallet-network:
+      etete-pay-network:
     volumes:
-      - fifa_fan_wallet_db_data:/var/lib/postgresql/data
+      - etete_pay_db_data:/var/lib/postgresql/data
 
 networks:
-  fifa-fan-wallet-network:
+  etete-pay-network:
     driver: bridge
 
 volumes:
-  fifa_fan_wallet_db_data:
+  etete_pay_db_data:

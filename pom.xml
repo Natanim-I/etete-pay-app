@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.oasis</groupId>
-	<artifactId>FIFAFanWallet</artifactId>
+	<artifactId>EtetePay</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>EtetePay</name>
+	<description>EtetePay multi-currency digital wallet REST API</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -101,7 +101,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>fifa-fan-wallet</finalName>
+		<finalName>etete-pay</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

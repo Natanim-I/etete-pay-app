@@ -1,6 +1,6 @@
-# FIFA Fan Wallet
+# EtetePay
 
-A Spring Boot REST API for managing multi-currency digital wallets, built for FIFA fans planning trips and tracking match-day spending. Users can register with email verification, reset their password, hold wallets in multiple currencies, transfer funds, exchange between wallets using live rates, set category-based trip budgets, make merchant payments, and view filtered transaction history — all secured with JWT authentication.
+A Spring Boot REST API for managing multi-currency digital wallets with EtetePay. Users can register with email verification, reset their password, hold wallets in multiple currencies, transfer funds, exchange between wallets using live rates, set category-based budgets, make merchant payments, and view filtered transaction history — all secured with JWT authentication.
 
 ## Features
 
@@ -43,7 +43,7 @@ A Spring Boot REST API for managing multi-currency digital wallets, built for FI
 ```env
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your_password
-DB_URL=jdbc:postgresql://postgres:5432/fifa_fan_wallet
+DB_URL=jdbc:postgresql://postgres:5432/etete_pay
 JWT_SECRET=your_base64_encoded_secret_key
 JWT_REFRESH_EXPIRATION=604800000
 ```
@@ -79,7 +79,7 @@ cp src/main/resources/application.properties.example src/main/resources/applicat
 2. Edit `application.properties` with your database credentials, JWT secret, and SMTP settings:
 
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/fifa_fan_wallet
+spring.datasource.url=jdbc:postgresql://localhost:5432/etete_pay
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 jwt.secret=your_base64_encoded_secret_key
@@ -100,7 +100,7 @@ frontend.url=http://localhost:5173
 3. Create the PostgreSQL database:
 
 ```sql
-CREATE DATABASE fifa_fan_wallet;
+CREATE DATABASE etete_pay;
 ```
 
 4. Run the application:
@@ -384,7 +384,7 @@ API errors are returned as a consistent JSON shape via `GeneralExceptionHandler`
 ## Project Structure
 
 ```
-src/main/java/com/oasis/FIFAFanWallet/
+src/main/java/com/oasis/EtetePay/
 ├── aop/             # AOP logging aspect for service-layer audit trails
 ├── config/          # Security, REST client setup
 ├── controller/      # REST API endpoints
@@ -409,7 +409,7 @@ src/main/java/com/oasis/FIFAFanWallet/
 ./mvnw clean package -DskipTests
 ```
 
-The packaged JAR is written to `target/fifa-fan-wallet.jar`.
+The packaged JAR is written to `target/etete-pay.jar`.
 
 ## License
 
