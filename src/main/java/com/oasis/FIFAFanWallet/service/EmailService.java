@@ -32,10 +32,10 @@ public class EmailService {
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6;">
         
-            <h2>Welcome to FIFA Fan Wallet ⚽</h2>
+            <h2>Welcome to Etete Pay</h2>
 
             <p>
-                Thank you for registering with FIFA Fan Wallet.
+                Thank you for registering with Etete Pay.
             </p>
 
             <p>
@@ -75,7 +75,7 @@ public class EmailService {
 
             <p>
                 Regards,<br>
-                FIFA Fan Wallet Team
+                Etete Pay Team
             </p>
 
         </body>
@@ -101,7 +101,7 @@ public class EmailService {
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6;">
         
-            <h2>Welcome to FIFA Fan Wallet ⚽</h2>
+            <h2>Reset your Etete Pay account password with the below options.</h2>
 
             <p>
                 Please reset your password by clicking the button below:
@@ -140,7 +140,7 @@ public class EmailService {
 
             <p>
                 Regards,<br>
-                FIFA Fan Wallet Team
+                Etete Pay Team
             </p>
 
         </body>
@@ -149,6 +149,40 @@ public class EmailService {
             );
         }catch (MessagingException ex){
             throw new EmailDeliveryException("Failed to send password reset email.");
+        }
+        mailSender.send(message);
+    }
+
+    public void sendPassResetConfirmationEmail(String to){
+        MimeMessage message = mailSender.createMimeMessage();
+        try
+        {
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setSubject("Password Reset Success.");
+            helper.setTo(to);
+            helper.setText("""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+        
+            <h2>Your Etete Pay account password has been successfully changed.</h2>
+   
+            <p>
+                If you did not request to reset your password, please reach out to us.
+            </p>
+
+            <br>
+
+            <p>
+                Regards,<br>
+                Etete Pay Team
+            </p>
+
+        </body>
+        </html>
+        """);
+        }catch (MessagingException ex){
+            throw new EmailDeliveryException("Failed to send password reset confirmation email.");
         }
         mailSender.send(message);
     }

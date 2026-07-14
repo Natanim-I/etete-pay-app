@@ -117,6 +117,7 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         passwordResetTokenRepo.delete(passResetToken);
+        emailService.sendPassResetConfirmationEmail(user.getEmail());
         return "Password reset successfully.";
     }
 }
