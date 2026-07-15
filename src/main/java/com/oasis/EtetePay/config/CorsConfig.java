@@ -13,7 +13,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${cors.allowed-origins:http://localhost:5173}")
+    @Value("${cors.allowed-origins:http://localhost:5173,https://main.d1yxx1xaihiq91.amplifyapp.com}")
     private String allowedOrigins;
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
