@@ -1,10 +1,12 @@
 package com.oasis.EtetePay.controller;
 import com.oasis.EtetePay.dto.*;
+import com.oasis.EtetePay.service.KycService;
 import com.oasis.EtetePay.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/user")
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final KycService kycService;
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> registerUser(@RequestBody RegisterRequest user) {
@@ -42,5 +45,10 @@ public class UserController {
     @PostMapping("reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody ResetPassRequest resetPassRequest){
         return ResponseEntity.ok(userService.resetPassword(resetPassRequest.newPassword(), resetPassRequest.token()));
+    }
+
+    @PostMapping(value = "submit-kyc", consumes = {"multipart/form-data"})
+    public ResponseEntity<KycResponse> processKyc(@RequestPart KycRequest kycRequest, @RequestPart MultipartFile idImage, @RequestPart MultipartFile selfieImage){
+        return ResponseEntity.ok(kycService.processKyc(kycRequest, idImage, selfieImage));
     }
 }

@@ -1,5 +1,6 @@
 package com.oasis.EtetePay.model.auth;
 
+import com.oasis.EtetePay.model.KYCProfile;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,6 +27,9 @@ public class User {
     private String lastName;
     private String country;
     private boolean enabled = false;
+    private boolean locked = false;
     private String verificationToken;
     private LocalDateTime tokenExpiry;
+    @OneToOne(mappedBy = "user")
+    private KYCProfile kycProfile;
 }

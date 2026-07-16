@@ -1,11 +1,14 @@
 package com.oasis.EtetePay.service;
 
 import com.oasis.EtetePay.dto.*;
+import com.oasis.EtetePay.enums.KYCStatus;
 import com.oasis.EtetePay.exception.InvalidVerificationToken;
 import com.oasis.EtetePay.exception.UserAlreadyExistsException;
 import com.oasis.EtetePay.exception.UserNotFoundException;
+import com.oasis.EtetePay.model.KYCProfile;
 import com.oasis.EtetePay.model.auth.PasswordResetToken;
 import com.oasis.EtetePay.model.auth.User;
+import com.oasis.EtetePay.repo.KycProfileRepository;
 import com.oasis.EtetePay.repo.PasswordResetTokenRepo;
 import com.oasis.EtetePay.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final PasswordResetTokenRepo passwordResetTokenRepo;
+    private final KycProfileRepository kycProfileRepository;
+
     //User registration with password being hashed
     public UserResponse registerUser(RegisterRequest user){
         //Checking if the email exists
@@ -46,6 +51,11 @@ public class UserService {
 
         //Saving user to database
         User registeredUser = userRepository.save(newUser);
+
+        KYCProfile kycProfile = new KYCProfile();
+        kycProfile.setUser(registeredUser);
+        kycProfile.setStatus(KYCStatus.NOT_STARTED);
+        kycProfileRepository.save(kycProfile);
 
         emailService.sendVerificationEmail(newUser.getEmail(), verificationToken);
 
