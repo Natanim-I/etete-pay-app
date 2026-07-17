@@ -2,6 +2,7 @@ package com.oasis.EtetePay.service;
 
 import com.oasis.EtetePay.dto.*;
 import com.oasis.EtetePay.enums.KYCStatus;
+import com.oasis.EtetePay.enums.KycLevel;
 import com.oasis.EtetePay.exception.InvalidVerificationToken;
 import com.oasis.EtetePay.exception.UserAlreadyExistsException;
 import com.oasis.EtetePay.exception.UserNotFoundException;
@@ -55,6 +56,7 @@ public class UserService {
         KYCProfile kycProfile = new KYCProfile();
         kycProfile.setUser(registeredUser);
         kycProfile.setStatus(KYCStatus.NOT_STARTED);
+        kycProfile.setKycLevel(KycLevel.NONE);
         kycProfileRepository.save(kycProfile);
 
         emailService.sendVerificationEmail(newUser.getEmail(), verificationToken);

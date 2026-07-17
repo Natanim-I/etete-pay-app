@@ -1,5 +1,6 @@
 package com.oasis.EtetePay.dto;
 
+import com.oasis.EtetePay.enums.Country;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -22,9 +23,5 @@ public record RegisterRequest(
         @Size(max = 50, message = "Last name shouldn't exceed 50 characters.")
         String lastName,
         @NotBlank(message = "Country is required.")
-        @Pattern(
-                regexp = "^[A-Z]{3}$",
-                message = "Country code must be a valid 3-letter uppercase code."
-        )
-        String country
+        Country country
 ) {}

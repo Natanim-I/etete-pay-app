@@ -1,6 +1,7 @@
 package com.oasis.EtetePay.model;
 
 import com.oasis.EtetePay.enums.KYCStatus;
+import com.oasis.EtetePay.enums.KycLevel;
 import com.oasis.EtetePay.model.auth.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -35,5 +36,6 @@ public class KYCProfile {
     private String selfieImageKey;
     private LocalDateTime submittedAt;
     private LocalDateTime verifiedAt;
+    private KycLevel kycLevel;
 
 }

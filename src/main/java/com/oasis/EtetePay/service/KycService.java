@@ -3,6 +3,7 @@ package com.oasis.EtetePay.service;
 import com.oasis.EtetePay.dto.KycRequest;
 import com.oasis.EtetePay.dto.KycResponse;
 import com.oasis.EtetePay.enums.KYCStatus;
+import com.oasis.EtetePay.enums.KycLevel;
 import com.oasis.EtetePay.exception.KycProfileNotFoundException;
 import com.oasis.EtetePay.exception.UserNotFoundException;
 import com.oasis.EtetePay.model.KYCProfile;
@@ -37,6 +38,7 @@ public class KycService {
         kycProfile.setPhoneNumber(kycRequest.phoneNumber());
         kycProfile.setStatus(KYCStatus.PENDING);
         kycProfile.setSubmittedAt(LocalDateTime.now());
+        kycProfile.setKycLevel(KycLevel.BASIC);
 
         String idFrontImageKey = s3Service.uploadKycImage(idFrontImage, user.getUserId(), "id-front");
         String idBackImageKey = s3Service.uploadKycImage(idBackImage, user.getUserId(), "id-back");
@@ -55,7 +57,6 @@ public class KycService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found."));
         KYCProfile kycProfile = kycProfileRepository.findByUser(user).orElseThrow(() -> new KycProfileNotFoundException("Kyc profile not found."));
-
         return new KycResponse(kycProfile.getKycId(), kycProfile.getStatus(), kycProfile.getSubmittedAt());
     }
 }

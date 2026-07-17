@@ -3,13 +3,15 @@ package com.oasis.EtetePay.service;
 import com.oasis.EtetePay.dto.WalletRequest;
 import com.oasis.EtetePay.dto.WalletResponse;
 import com.oasis.EtetePay.enums.Currency;
+import com.oasis.EtetePay.enums.KYCStatus;
+import com.oasis.EtetePay.enums.KycLevel;
 import com.oasis.EtetePay.enums.WalletStatus;
-import com.oasis.EtetePay.exception.AccessDeniedException;
-import com.oasis.EtetePay.exception.UserNotFoundException;
-import com.oasis.EtetePay.exception.WalletAlreadyExistsException;
-import com.oasis.EtetePay.exception.WalletNotFoundException;
+import com.oasis.EtetePay.exception.*;
+import com.oasis.EtetePay.exception.IllegalArgumentException;
+import com.oasis.EtetePay.model.KYCProfile;
 import com.oasis.EtetePay.model.Wallet;
 import com.oasis.EtetePay.model.auth.User;
+import com.oasis.EtetePay.repo.KycProfileRepository;
 import com.oasis.EtetePay.repo.UserRepository;
 import com.oasis.EtetePay.repo.WalletRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class WalletService {
     private final UserRepository userRepo;
     private final WalletRepository walletRepository;
     private final ExchangeRateService exchangeRateService;
+    private final KycProfileRepository kycProfileRepository;
 
     public BigDecimal calculateTotalBalance() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -69,6 +72,55 @@ public class WalletService {
         Wallet wallet = new Wallet(walletRequest.currency(), BigDecimal.ZERO, user, WalletStatus.ACTIVE);
         Wallet savedWallet = walletRepository.save(wallet);
         return new WalletResponse(savedWallet.getWalletId(), savedWallet.getBalance(), savedWallet.getCurrency());
+    }
+
+    private void validateWalletCreation(User user, Currency currency) {
+        KYCProfile kycProfile = kycProfileRepository.findByUser(user).orElseThrow(() -> new KycProfileNotFoundException("KYC profile not found."));
+
+        // User must have approved KYC
+        if (kycProfile.getStatus() != KYCStatus.VERIFIED){
+            throw new IllegalArgumentException("KYC verification is required to create a wallet.");
+        }
+
+        switch (user.getCountry()){
+            case "ETHIOPIA" -> validateEthiopianRules(kycProfile, currency);
+            case "USA" -> validateUSARules(kycProfile, currency);
+            default -> throw new IllegalArgumentException("Wallet creation is not allowed for users from this country.");
+        }
+    }
+
+    private void validateEthiopianRules(KYCProfile kycProfile, Currency currency){
+        switch (currency){
+            case ETB -> {
+            }
+
+            case USD -> {
+                if(kycProfile.getKycLevel() != KycLevel.ENHANCED){
+                    throw new IllegalArgumentException("USD wallet requires Enhanced KYC.");
+                }
+            }
+
+            default -> {
+                throw new IllegalArgumentException(currency + " wallets are not available in Ethiopia.");
+            }
+        }
+    }
+
+    private void validateUSARules(KYCProfile kycProfile, Currency currency){
+        switch (currency){
+            case USD -> {
+            }
+
+            case ETB, EUR -> {
+                if(kycProfile.getKycLevel() == KycLevel.NONE){
+                    throw new IllegalArgumentException(currency + " wallet requires at least Basic KYC.");
+                }
+            }
+
+            default -> {
+                throw new IllegalArgumentException(currency + " wallets are not available in the USA.");
+            }
+        }
     }
 
     public void disableUserWallet(UUID walletId) {
