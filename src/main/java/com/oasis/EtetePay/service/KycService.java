@@ -45,7 +45,9 @@ public class KycService {
         kycProfile.setIdFrontImageKey(idFrontImageKey);
         kycProfile.setIdBackImageKey(idBackImageKey);
         kycProfile.setSelfieImageKey(selfieImageKey);
-        
-        return null;
+
+        kycProfileRepository.save(kycProfile);
+
+        return new KycResponse(kycProfile.getKycId(), kycProfile.getStatus(), kycProfile.getSubmittedAt());
     }
 }
