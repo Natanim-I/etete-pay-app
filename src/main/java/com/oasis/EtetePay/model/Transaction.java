@@ -26,6 +26,7 @@ public class Transaction {
     private Wallet wallet;
     @Enumerated(EnumType.STRING)
     private TransactionType type;
+    private String paymentIntentId;
     @Enumerated(EnumType.STRING)
     private BudgetCategory category;
     @Enumerated(EnumType.STRING)

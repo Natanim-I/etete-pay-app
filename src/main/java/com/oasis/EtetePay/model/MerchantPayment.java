@@ -15,7 +15,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Payment {
+public class MerchantPayment {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID paymentId;

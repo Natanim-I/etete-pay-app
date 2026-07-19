@@ -102,7 +102,7 @@ public class LoggingAspect {
     }
 
     @AfterReturning(value = "* com.oasis.EtetePay.service.PaymentService.makePayment(..)", returning = "result")
-    public void logMakePaymentCall(JoinPoint jp, PaymentResponse result){
+    public void logMakePaymentCall(JoinPoint jp, MerchantPaymentResponse result){
         APP_LOGGER.info("Payment made, method {} executed successfully. Payment Id: {}.",
                 jp.getSignature().getName(),
                 result.paymentId());

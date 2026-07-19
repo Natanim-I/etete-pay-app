@@ -3,6 +3,7 @@ package com.oasis.EtetePay.repo;
 import com.oasis.EtetePay.enums.Currency;
 import com.oasis.EtetePay.enums.TransactionType;
 import com.oasis.EtetePay.model.Transaction;
+import com.oasis.EtetePay.model.auth.User;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,8 +15,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, UUID>, JpaSpecificationExecutor<Transaction> {
+   Optional<Transaction> findByPaymentIntentId(String paymentIntentId);
+   Optional<Transaction> findByTransactionIdAndWallet_User(
+           UUID transactionId,
+           User user
+   );
 }

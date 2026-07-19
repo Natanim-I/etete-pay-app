@@ -1,12 +1,10 @@
 package com.oasis.EtetePay.service;
 
-import com.oasis.EtetePay.dto.ExchangeResponse;
-import com.oasis.EtetePay.dto.TransactionRequest;
-import com.oasis.EtetePay.dto.TransactionResponse;
-import com.oasis.EtetePay.dto.TransferResponse;
+import com.oasis.EtetePay.dto.*;
 import com.oasis.EtetePay.enums.*;
 import com.oasis.EtetePay.exception.*;
 import com.oasis.EtetePay.exception.IllegalArgumentException;
+import com.oasis.EtetePay.helpers.Helper;
 import com.oasis.EtetePay.model.Transaction;
 import com.oasis.EtetePay.model.Wallet;
 import com.oasis.EtetePay.model.auth.User;
@@ -14,6 +12,9 @@ import com.oasis.EtetePay.repo.TransactionRepository;
 import com.oasis.EtetePay.repo.UserRepository;
 import com.oasis.EtetePay.repo.WalletRepository;
 import com.oasis.EtetePay.specification.TransactionSpecification;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentCreateParams;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,9 +32,10 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final ExchangeRateService exchangeRateService;
     private final UserRepository userRepository;
+    private final Helper helper;
 
     @Transactional
-    public TransactionResponse deposit(UUID walletId, TransactionRequest transactionRequest) {
+    public DepositInitiationResponse initiateDeposit(UUID walletId, TransactionRequest transactionRequest) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found."));
         Wallet wallet = walletRepository.findByWalletIdAndUser(walletId, user).orElseThrow(() -> new WalletNotFoundException("Wallet associated with this user not found!"));
@@ -43,24 +45,28 @@ public class TransactionService {
             throw new IllegalStateException("Wallet is Disabled.");
         }
 
-        wallet.setBalance(wallet.getBalance().add(transactionRequest.amount()));
-
         Transaction transaction = new Transaction();
         transaction.setAmount(transactionRequest.amount());
         transaction.setType(TransactionType.DEPOSIT);
         transaction.setWallet(wallet);
-        transaction.setStatus(TransactionStatus.SUCCESS);
+        transaction.setStatus(TransactionStatus.PENDING);
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
+        transactionRepository.save(transaction);
 
-        return new TransactionResponse(
-                savedTransaction.getTransactionId(),
-                savedTransaction.getWallet().getWalletId(),
-                savedTransaction.getAmount(),
-                savedTransaction.getType(),
-                savedTransaction.getStatus(),
-                savedTransaction.getCreatedAt()
-        );
+        long stripeAmount = helper.toStripeAmount(transactionRequest.amount());
+
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                .setAmount(stripeAmount)
+                .setCurrency(wallet.getCurrency().name().toLowerCase())
+                .build();
+
+        PaymentIntent intent;
+        try {
+            intent = PaymentIntent.create(params);
+        } catch (StripeException e) {
+            throw new StripePaymentException("Failed to create payment intent: " + e.getMessage());
+        }
+        return new DepositInitiationResponse(transaction.getTransactionId(), intent.getClientSecret());
     }
 
     @Transactional
@@ -77,8 +83,6 @@ public class TransactionService {
             throw new InsufficientFundsException("Insufficient balance.");
         }
 
-        wallet.setBalance(wallet.getBalance().subtract(transactionRequest.amount()));
-
         Transaction transaction = new Transaction();
         transaction.setAmount(transactionRequest.amount());
         transaction.setType(TransactionType.WITHDRAW);
@@ -86,6 +90,8 @@ public class TransactionService {
         transaction.setStatus(TransactionStatus.SUCCESS);
 
         Transaction savedTransaction = transactionRepository.save(transaction);
+
+        wallet.setBalance(wallet.getBalance().subtract(transactionRequest.amount()));
 
         return new TransactionResponse(
                 savedTransaction.getTransactionId(),
@@ -121,9 +127,6 @@ public class TransactionService {
             throw new InsufficientFundsException("Insufficient balance.");
         }
 
-        senderWallet.setBalance(senderWallet.getBalance().subtract(transactionRequest.amount()));
-        receiverWallet.setBalance(receiverWallet.getBalance().add(transactionRequest.amount()));
-
         Transaction sentTransaction = new Transaction();
         sentTransaction.setAmount(transactionRequest.amount());
         sentTransaction.setType(TransactionType.TRANSFER_OUT);
@@ -138,6 +141,9 @@ public class TransactionService {
 
         transactionRepository.save(sentTransaction);
         transactionRepository.save(receivedTransaction);
+
+        senderWallet.setBalance(senderWallet.getBalance().subtract(transactionRequest.amount()));
+        receiverWallet.setBalance(receiverWallet.getBalance().add(transactionRequest.amount()));
 
         return new TransferResponse(
                 sentTransaction.getTransactionId(),
@@ -178,10 +184,8 @@ public class TransactionService {
             throw new InsufficientFundsException("Insufficient funds.");
         }
 
-        fromWallet.setBalance(fromWallet.getBalance().subtract(transactionRequest.amount()));
         BigDecimal rate = exchangeRateService.getCurrencyExchangeRate(fromWallet.getCurrency(), toWallet.getCurrency());
         BigDecimal convertedAmount = transactionRequest.amount().multiply(rate).setScale(2, RoundingMode.HALF_UP);
-        toWallet.setBalance(toWallet.getBalance().add(convertedAmount));
 
         Transaction exchangeOutTransaction = new Transaction();
         exchangeOutTransaction.setAmount(transactionRequest.amount());
@@ -197,6 +201,9 @@ public class TransactionService {
 
         transactionRepository.save(exchangeOutTransaction);
         transactionRepository.save(exchangeInTransaction);
+
+        fromWallet.setBalance(fromWallet.getBalance().subtract(transactionRequest.amount()));
+        toWallet.setBalance(toWallet.getBalance().add(convertedAmount));
 
         return new ExchangeResponse(
                 exchangeOutTransaction.getTransactionId(),
@@ -237,5 +244,20 @@ public class TransactionService {
                         transaction.getStatus(),
                         transaction.getCreatedAt()))
                 .toList();
+    }
+
+    public TransactionResponse getTransactionById(UUID transactionId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found."));
+        Transaction transaction = transactionRepository.findByTransactionIdAndWallet_User(transactionId, user)
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found for this user."));
+
+        return new TransactionResponse(
+                transaction.getTransactionId(),
+                transaction.getWallet().getWalletId(),
+                transaction.getAmount(),
+                transaction.getType(),
+                transaction.getStatus(),
+                transaction.getCreatedAt());
     }
 }

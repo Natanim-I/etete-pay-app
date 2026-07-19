@@ -1,17 +1,21 @@
 package com.oasis.EtetePay.service;
 
 import com.oasis.EtetePay.dto.*;
+import com.oasis.EtetePay.enums.Currency;
 import com.oasis.EtetePay.enums.KYCStatus;
 import com.oasis.EtetePay.enums.KycLevel;
 import com.oasis.EtetePay.exception.InvalidVerificationToken;
 import com.oasis.EtetePay.exception.UserAlreadyExistsException;
 import com.oasis.EtetePay.exception.UserNotFoundException;
+import com.oasis.EtetePay.exception.WalletNotFoundException;
 import com.oasis.EtetePay.model.KYCProfile;
+import com.oasis.EtetePay.model.Wallet;
 import com.oasis.EtetePay.model.auth.PasswordResetToken;
 import com.oasis.EtetePay.model.auth.User;
 import com.oasis.EtetePay.repo.KycProfileRepository;
 import com.oasis.EtetePay.repo.PasswordResetTokenRepo;
 import com.oasis.EtetePay.repo.UserRepository;
+import com.oasis.EtetePay.repo.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +35,7 @@ public class UserService {
     private final EmailService emailService;
     private final PasswordResetTokenRepo passwordResetTokenRepo;
     private final KycProfileRepository kycProfileRepository;
+    private final WalletRepository walletRepository;
 
     //User registration with password being hashed
     public UserResponse registerUser(RegisterRequest user){
@@ -136,5 +141,12 @@ public class UserService {
         passwordResetTokenRepo.delete(passResetToken);
         emailService.sendPassResetConfirmationEmail(user.getEmail());
         return "Password reset successfully.";
+    }
+
+    public RecipientResponse lookupRecipient(String email, Currency currency) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException("Recipient not found."));
+        Wallet wallet = walletRepository.findByUserAndCurrency(user, currency).orElseThrow(() -> new WalletNotFoundException("Recipient does not have a wallet in the specified currency."));
+
+        return new RecipientResponse(user.getFirstName(), user.getLastName(), user.getEmail(), wallet.getWalletId(), wallet.getCurrency());
     }
 }

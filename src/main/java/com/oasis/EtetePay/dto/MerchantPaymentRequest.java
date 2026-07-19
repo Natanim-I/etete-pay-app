@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record PaymentRequest(
+public record MerchantPaymentRequest(
         @NotBlank(message = "Wallet id is required.")
         UUID walletId,
         @NotBlank(message = "Payment amount is required")

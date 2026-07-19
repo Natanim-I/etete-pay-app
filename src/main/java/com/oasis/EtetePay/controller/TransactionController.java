@@ -1,15 +1,10 @@
 package com.oasis.EtetePay.controller;
 
-import com.oasis.EtetePay.dto.ExchangeResponse;
-import com.oasis.EtetePay.dto.TransactionRequest;
-import com.oasis.EtetePay.dto.TransactionResponse;
-import com.oasis.EtetePay.dto.TransferResponse;
+import com.oasis.EtetePay.dto.*;
 import com.oasis.EtetePay.enums.Currency;
 import com.oasis.EtetePay.enums.TransactionType;
-import com.oasis.EtetePay.model.Transaction;
 import com.oasis.EtetePay.service.TransactionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +23,8 @@ public class TransactionController {
     private final TransactionService transactionService;
 
     @PostMapping("/wallet/{walletId}/deposit")
-    public ResponseEntity<TransactionResponse> deposit(@PathVariable UUID walletId, @RequestBody TransactionRequest transactionRequest){
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.deposit(walletId, transactionRequest));
+    public ResponseEntity<DepositInitiationResponse> initiateDeposit(@PathVariable UUID walletId, @RequestBody TransactionRequest transactionRequest){
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.initiateDeposit(walletId, transactionRequest));
     }
 
     @PostMapping("/wallet/{walletId}/withdraw")
@@ -57,5 +52,10 @@ public class TransactionController {
             @RequestParam(required = false) BigDecimal maxAmount,
             @RequestParam(required = false) BigDecimal amount){
         return ResponseEntity.ok(transactionService.getAllTransactionUser(type, currency, startDate, endDate, minAmount, maxAmount, amount));
+    }
+
+    @GetMapping("/transactions/{transactionId}")
+    public ResponseEntity<TransactionResponse> getTransactionById(@PathVariable UUID transactionId){
+        return ResponseEntity.ok(transactionService.getTransactionById(transactionId));
     }
 }

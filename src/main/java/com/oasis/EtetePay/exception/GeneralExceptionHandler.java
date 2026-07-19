@@ -116,4 +116,14 @@ public class GeneralExceptionHandler {
     public ResponseEntity<ErrorResponse> handleFailedToUploadToS3(FailedToUploadToS3Exception ex){
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(500, ex.getMessage()));
     }
+
+    @ExceptionHandler(StripePaymentException.class)
+    public ResponseEntity<ErrorResponse> handleStripePaymentException(StripePaymentException ex){
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(500, ex.getMessage()));
+    }
+
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTransactionNotFound(TransactionNotFoundException ex){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(404, ex.getMessage()));
+    }
 }

@@ -1,5 +1,6 @@
 package com.oasis.EtetePay.controller;
 import com.oasis.EtetePay.dto.*;
+import com.oasis.EtetePay.enums.Currency;
 import com.oasis.EtetePay.service.KycService;
 import com.oasis.EtetePay.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -55,5 +56,10 @@ public class UserController {
     @PostMapping(value = "submit-kyc", consumes = {"multipart/form-data"})
     public ResponseEntity<KycResponse> processKyc(@RequestPart KycRequest kycRequest, @RequestPart MultipartFile idFrontImage, @RequestPart MultipartFile idBackImage, @RequestPart MultipartFile selfieImage){
         return ResponseEntity.ok(kycService.processKyc(kycRequest, idFrontImage, idBackImage, selfieImage));
+    }
+
+    @GetMapping("transfer-recipient")
+    public ResponseEntity<RecipientResponse> lookupRecipient(@RequestParam(required = true) String email, @RequestParam(required = true)Currency currency){
+        return ResponseEntity.ok(userService.lookupRecipient(email, currency));
     }
 }

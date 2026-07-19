@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record PaymentResponse(
+public record MerchantPaymentResponse(
         UUID paymentId,
         UUID userId,
         UUID walletId,
