@@ -35,4 +35,13 @@ public class ExternalPaymentService {
         transaction.setStatus(TransactionStatus.SUCCESS);
         transactionRepository.save(transaction);
     }
+
+    public void handlePaymentFailure(Event event) {
+        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElseThrow();
+
+        Transaction transaction = transactionRepository.findByPaymentIntentId(paymentIntent.getId())
+                .orElseThrow(() -> new StripePaymentException("Payment Intent ID not found in the event."));
+        transaction.setStatus(TransactionStatus.FAILED);
+        transactionRepository.save(transaction);
+    }
 }
