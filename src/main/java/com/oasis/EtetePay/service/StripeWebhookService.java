@@ -28,13 +28,13 @@ public class StripeWebhookService {
         }
 
         switch (event.getType()) {
-            case "payment_intent.succeeded":
+            case "payment_intent.succeeded" ->
                 externalPaymentService.handlePaymentSuccess(event);
 
-            case "payment_intent.payment_failed":
+            case "payment_intent.payment_failed" ->
                 externalPaymentService.handlePaymentFailure(event);
 
-            default:
+            default -> 
               log.warn("Unhandled event type: {}", event.getType());
         }
     }
